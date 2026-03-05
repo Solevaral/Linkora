@@ -35,15 +35,20 @@ namespace linkora::network
 
     bool UdpTransport::Bind(const std::string &host, std::uint16_t port)
     {
+        Close();
+
 #if defined(_WIN32)
-        WSADATA wsaData;
-        if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+        if (!winsockInitialized_)
         {
-            return false;
+            WSADATA wsaData;
+            if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+            {
+                return false;
+            }
+            winsockInitialized_ = true;
         }
 #endif
 
-        Close();
         socketFd_ = static_cast<int>(socket(AF_INET, SOCK_DGRAM, 0));
         if (socketFd_ < 0)
         {
@@ -164,7 +169,11 @@ namespace linkora::network
     {
         CloseFd(socketFd_);
 #if defined(_WIN32)
-        WSACleanup();
+        if (winsockInitialized_)
+        {
+            WSACleanup();
+            winsockInitialized_ = false;
+        }
 #endif
     }
 

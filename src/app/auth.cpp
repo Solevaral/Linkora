@@ -275,17 +275,32 @@ namespace linkora::app
     {
         AuthResult result;
 
-        const std::string hello = "HELLO|" + config.login;
-        if (!transport.SendTo(config.host, config.port, std::vector<std::uint8_t>(hello.begin(), hello.end())))
-        {
-            result.error = "Failed to send HELLO";
-            return result;
-        }
-
         std::vector<std::uint8_t> packet;
         std::string peerHost;
         std::uint16_t peerPort = 0;
-        if (!transport.ReceiveFrom(packet, peerHost, peerPort, timeoutMs))
+
+        const std::string hello = "HELLO|" + config.login;
+        constexpr int kHelloAttempts = 5;
+        const int perAttemptTimeoutMs = std::max(1000, timeoutMs / kHelloAttempts);
+
+        bool gotChallenge = false;
+        for (int attempt = 0; attempt < kHelloAttempts; ++attempt)
+        {
+            if (!transport.SendTo(config.host, config.port, std::vector<std::uint8_t>(hello.begin(), hello.end())))
+            {
+                result.error = "Failed to send HELLO";
+                return result;
+            }
+
+            packet.clear();
+            if (transport.ReceiveFrom(packet, peerHost, peerPort, perAttemptTimeoutMs))
+            {
+                gotChallenge = true;
+                break;
+            }
+        }
+
+        if (!gotChallenge)
         {
             result.error = "Timeout waiting for CHALLENGE";
             return result;

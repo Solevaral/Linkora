@@ -105,14 +105,15 @@ int main(int argc, char **argv)
         linkora::utils::Log(linkora::utils::LogLevel::Info, "Tunnel up on device " + tunnel->DeviceName());
     }
 
-    auto auth = linkora::app::HostAuthenticate(transport, config, 30000);
-    if (!auth.ok)
+    linkora::app::AuthResult auth;
+    while (true)
     {
-        std::cerr << "Auth failed: " << auth.error << '\n';
-        routeManager.Cleanup();
-        tunnel->Close();
-        transport.Close();
-        return 1;
+        auth = linkora::app::HostAuthenticate(transport, config, 30000);
+        if (auth.ok)
+        {
+            break;
+        }
+        std::cerr << "Auth failed: " << auth.error << " (continuing to wait)\n";
     }
 
     linkora::utils::Log(linkora::utils::LogLevel::Info, "Authenticated peer " + auth.peerHost + ":" + std::to_string(auth.peerPort));

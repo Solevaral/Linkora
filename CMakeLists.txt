@@ -63,6 +63,11 @@ add_executable(linkora_client_worker src/app/client_main.cpp ${LINKORA_NETWORK_S
 target_include_directories(linkora_client_worker PRIVATE src)
 target_link_libraries(linkora_client_worker PRIVATE linkora_core)
 
+if(WIN32)
+    target_link_libraries(linkora_host PRIVATE ws2_32)
+    target_link_libraries(linkora_client_worker PRIVATE ws2_32)
+endif()
+
 add_executable(linkora_hash src/app/hash_main.cpp)
 target_include_directories(linkora_hash PRIVATE src)
 target_link_libraries(linkora_hash PRIVATE linkora_core)
@@ -70,7 +75,7 @@ target_link_libraries(linkora_hash PRIVATE linkora_core)
 if(LINKORA_BUILD_GUI)
     find_package(Qt6 COMPONENTS Widgets QUIET)
     if(Qt6_FOUND)
-        add_executable(linkora_gui
+        add_executable(linkora_gui WIN32
             src/gui/gui_main.cpp
             src/gui/main_window.cpp
             src/gui/main_window.h
@@ -81,7 +86,7 @@ if(LINKORA_BUILD_GUI)
     else()
         find_package(Qt5 COMPONENTS Widgets QUIET)
         if(Qt5_FOUND)
-            add_executable(linkora_gui
+            add_executable(linkora_gui WIN32
                 src/gui/gui_main.cpp
                 src/gui/main_window.cpp
                 src/gui/main_window.h

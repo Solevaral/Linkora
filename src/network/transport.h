@@ -22,6 +22,9 @@ namespace linkora::network
 
     private:
         int socketFd_ = -1;
+#if defined(_WIN32)
+        bool winsockInitialized_ = false;
+#endif
     };
 
 } // namespace linkora::network
