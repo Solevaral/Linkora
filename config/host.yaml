@@ -5,7 +5,7 @@ network:
 
 auth:
   login: host-admin
-  password_hash: "REPLACE_WITH_SALTED_HASH"
+  password: "dev-password"
 
 vpn:
   virtual_subnet: 10.44.0.0/24

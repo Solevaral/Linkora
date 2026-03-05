@@ -12,10 +12,16 @@ namespace linkora::network
     public:
         bool Bind(const std::string &host, std::uint16_t port);
         bool SendTo(const std::string &host, std::uint16_t port, const std::vector<std::uint8_t> &payload);
+        bool ReceiveFrom(
+            std::vector<std::uint8_t> &payload,
+            std::string &peerHost,
+            std::uint16_t &peerPort,
+            int timeoutMs);
+        bool IsOpen() const;
         void Close();
 
     private:
-        bool isOpen_ = false;
+        int socketFd_ = -1;
     };
 
 } // namespace linkora::network

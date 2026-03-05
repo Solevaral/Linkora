@@ -3,8 +3,8 @@ network:
   port: 38123
 
 auth:
-  login: user1
-  password: "REPLACE_FOR_LOCAL_TEST_ONLY"
+  login: host-admin
+  password: "dev-password"
 
 vpn:
   virtual_ip: 10.44.0.10

@@ -1,5 +1,7 @@
 #include "core/tunnel.h"
 
+#include <memory>
+
 namespace linkora::core
 {
 
@@ -24,7 +26,33 @@ namespace linkora::core
             return -1;
         }
 
+        const std::string &DeviceName() const override { return deviceName_; }
+
         void Close() override {}
+
+    private:
+        std::string deviceName_ = "wintun0";
     };
+
+    std::unique_ptr<ITunnel> CreatePlatformTunnel()
+    {
+        return std::make_unique<WindowsTun>();
+    }
+
+    bool CreateAndBringUpTunnel(
+        ITunnel &tunnel,
+        const char *requestedName,
+        int mtu,
+        std::string &error)
+    {
+        (void)requestedName;
+        (void)mtu;
+        if (!tunnel.Open("wintun0"))
+        {
+            error = "Windows tunnel backend is not implemented yet.";
+            return false;
+        }
+        return true;
+    }
 
 } // namespace linkora::core
