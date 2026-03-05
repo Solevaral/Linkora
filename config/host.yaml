@@ -1,0 +1,12 @@
+network:
+  name: dev-net
+  listen_host: 0.0.0.0
+  listen_port: 38123
+
+auth:
+  login: host-admin
+  password_hash: "REPLACE_WITH_SALTED_HASH"
+
+vpn:
+  virtual_subnet: 10.44.0.0/24
+  mtu: 1400

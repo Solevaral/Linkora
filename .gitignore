@@ -1,0 +1,54 @@
+# Build outputs
+build/
+out/
+bin/
+lib/
+cmake-build-*/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+CTestTestfile.cmake
+cmake_install.cmake
+compile_commands.json
+Makefile
+
+# IDE/editor
+.vscode/
+.idea/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs and runtime artifacts
+*.log
+*.pid
+*.tmp
+
+# Secrets and local config overrides
+*.key
+*.pem
+*.p12
+*.crt
+config/*.local.yaml
+config/*-secrets.yaml
+
+# Testing artifacts
+*.gcda
+*.gcno
+*.profraw
+*.profdata
+
+# Windows specific
+*.obj
+*.pdb
+*.ilk
+*.lib
+*.dll
+*.exe
+
+# Linux specific
+*.so
+*.a

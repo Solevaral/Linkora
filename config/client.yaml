@@ -1,0 +1,11 @@
+network:
+  host: 127.0.0.1
+  port: 38123
+
+auth:
+  login: user1
+  password: "REPLACE_FOR_LOCAL_TEST_ONLY"
+
+vpn:
+  virtual_ip: 10.44.0.10
+  mtu: 1400
