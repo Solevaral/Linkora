@@ -47,6 +47,20 @@ int main(int argc, char **argv)
     const auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(
                            std::chrono::system_clock::now().time_since_epoch())
                            .count();
+    if (!linkora::app::CheckCoordinatorReachable(
+            transport,
+            config.host,
+            config.port,
+            2500,
+            error))
+    {
+        std::cerr << "Port check failed: " << error << '\n';
+        routeManager.Cleanup();
+        tunnel->Close();
+        transport.Close();
+        return 1;
+    }
+
     const std::string networkName = config.login;
     const std::string clientId = "client-" + std::to_string(nowMs);
     const auto join = linkora::app::JoinNetworkViaCoordinator(

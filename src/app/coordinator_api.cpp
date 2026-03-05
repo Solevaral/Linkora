@@ -123,6 +123,42 @@ namespace linkora::app
         return ExecuteCoordinatorCommand(transport, coordinatorHost, coordinatorPort, command, timeoutMs);
     }
 
+    bool CheckCoordinatorReachable(
+        network::UdpTransport &transport,
+        const std::string &coordinatorHost,
+        std::uint16_t coordinatorPort,
+        int timeoutMs,
+        std::string &error)
+    {
+        const std::string ping = "PING";
+        if (!transport.SendTo(
+                coordinatorHost,
+                coordinatorPort,
+                std::vector<std::uint8_t>(ping.begin(), ping.end())))
+        {
+            error = "Cannot send to coordinator. Check network.host/network.port and firewall.";
+            return false;
+        }
+
+        std::vector<std::uint8_t> packet;
+        std::string peerHost;
+        std::uint16_t peerPort = 0;
+        if (!transport.ReceiveFrom(packet, peerHost, peerPort, timeoutMs))
+        {
+            error = "Coordinator UDP port is not reachable. Open UDP port and check firewall/NAT.";
+            return false;
+        }
+
+        const std::string response(packet.begin(), packet.end());
+        if (response != "OK|pong")
+        {
+            error = "Unexpected response from coordinator during port check: " + response;
+            return false;
+        }
+
+        return true;
+    }
+
     CoordinatorResult JoinNetworkViaCoordinator(
         network::UdpTransport &transport,
         const std::string &coordinatorHost,

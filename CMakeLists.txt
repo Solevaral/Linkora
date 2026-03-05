@@ -41,6 +41,7 @@ set(LINKORA_APP_SOURCES
     src/app/auth.cpp
     src/app/coordinator_api.cpp
     src/app/config.cpp
+    src/app/port_open.cpp
     src/utils/logging.cpp
 )
 

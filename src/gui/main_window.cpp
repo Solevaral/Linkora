@@ -64,7 +64,7 @@ void MainWindow::BuildUi()
     configGrid->setVerticalSpacing(8);
 
     auto *hostAddressLabel = new QLabel("Coordinator address");
-    hostAddressEdit_ = new QLineEdit("127.0.0.1");
+    hostAddressEdit_ = new QLineEdit;
 
     auto *portLabel = new QLabel("Port");
     portEdit_ = new QLineEdit("38123");
@@ -73,7 +73,7 @@ void MainWindow::BuildUi()
     loginEdit_ = new QLineEdit("room1");
 
     auto *passwordLabel = new QLabel("Network password");
-    passwordEdit_ = new QLineEdit("dev-password");
+    passwordEdit_ = new QLineEdit;
     passwordEdit_->setEchoMode(QLineEdit::Password);
 
     tunCheck_ = new QCheckBox("Enable TUN mode (requires privileges)");

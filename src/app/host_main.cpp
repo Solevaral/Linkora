@@ -7,6 +7,7 @@
 #include "app/auth.h"
 #include "app/coordinator_api.h"
 #include "app/config.h"
+#include "app/port_open.h"
 #include "core/tunnel.h"
 #include "network/frame.h"
 #include "network/route_manager.h"
@@ -40,7 +41,28 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    std::string openPortError;
+    if (!linkora::app::EnsureUdpPortOpen(config.listenPort, openPortError))
+    {
+        std::cerr << "Port auto-open warning: " << openPortError << '\n';
+        std::cerr << "Host can continue, but clients may fail to connect if firewall blocks UDP "
+                  << config.listenPort << ".\n";
+    }
+
     const std::string hostClientId = "host-" + networkName + "-" + std::to_string(config.listenPort);
+    if (!linkora::app::CheckCoordinatorReachable(
+            transport,
+            config.coordinatorHost,
+            config.coordinatorPort,
+            2500,
+            error))
+    {
+        std::cerr << "Port check failed: " << error << '\n';
+        std::cerr << "Hint: open UDP " << config.coordinatorPort << " on coordinator server and allow outbound/inbound UDP on host.\n";
+        transport.Close();
+        return 1;
+    }
+
     const auto registration = linkora::app::RegisterHostWithCoordinator(
         transport,
         config.coordinatorHost,

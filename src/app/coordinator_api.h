@@ -18,6 +18,13 @@ namespace linkora::app
         std::string error;
     };
 
+    bool CheckCoordinatorReachable(
+        network::UdpTransport &transport,
+        const std::string &coordinatorHost,
+        std::uint16_t coordinatorPort,
+        int timeoutMs,
+        std::string &error);
+
     CoordinatorResult RegisterHostWithCoordinator(
         network::UdpTransport &transport,
         const std::string &coordinatorHost,
