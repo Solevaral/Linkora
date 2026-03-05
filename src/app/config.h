@@ -11,6 +11,8 @@ namespace linkora::app
         std::string networkName;
         std::string listenHost;
         std::uint16_t listenPort = 0;
+        std::string coordinatorHost;
+        std::uint16_t coordinatorPort = 0;
         std::string login;
         std::string passwordHash;
         std::string passwordPlain;

@@ -239,9 +239,12 @@ bool MainWindow::WriteHostConfig(QString &outPath, QString &error) const
 
     QTextStream s(&file);
     s << "network:\n";
-    s << "  name: quick-net\n";
+    s << "  name: " << loginEdit_->text().trimmed() << "\n";
     s << "  listen_host: 0.0.0.0\n";
     s << "  listen_port: " << portEdit_->text().trimmed() << "\n\n";
+    s << "coordinator:\n";
+    s << "  host: " << hostAddressEdit_->text().trimmed() << "\n";
+    s << "  port: " << portEdit_->text().trimmed() << "\n\n";
     s << "auth:\n";
     s << "  login: \"" << loginEdit_->text().trimmed() << "\"\n";
     s << "  password: \"" << passwordEdit_->text() << "\"\n\n";
@@ -378,7 +381,7 @@ void MainWindow::RunClient()
         return;
     }
 
-    const QString clientBin = ResolveBinaryPath("linkora_client");
+    const QString clientBin = ResolveBinaryPath("linkora_client_worker");
     QStringList args;
     args << cfgPath;
 

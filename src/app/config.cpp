@@ -160,6 +160,12 @@ namespace linkora::app
             error = "Invalid network.listen_port";
             return false;
         }
+        outConfig.coordinatorHost = values["coordinator.host"];
+        if (!ParseU16(values["coordinator.port"], outConfig.coordinatorPort))
+        {
+            error = "Invalid coordinator.port";
+            return false;
+        }
         outConfig.login = values["auth.login"];
         outConfig.passwordHash = values["auth.password_hash"];
         outConfig.passwordPlain = values["auth.password"];
@@ -170,7 +176,7 @@ namespace linkora::app
             return false;
         }
 
-        if (outConfig.listenHost.empty() || outConfig.login.empty())
+        if (outConfig.listenHost.empty() || outConfig.login.empty() || outConfig.coordinatorHost.empty())
         {
             error = "Host config missing required fields";
             return false;

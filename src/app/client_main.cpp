@@ -5,12 +5,15 @@
 #include <vector>
 
 #include "app/auth.h"
+#include "app/coordinator_api.h"
 #include "app/config.h"
 #include "core/tunnel.h"
 #include "network/frame.h"
 #include "network/route_manager.h"
 #include "network/transport.h"
 #include "utils/logging.h"
+
+#include <chrono>
 
 int main(int argc, char **argv)
 {
@@ -41,7 +44,38 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    auto auth = linkora::app::ClientAuthenticate(transport, config, 10000);
+    const auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+                           std::chrono::system_clock::now().time_since_epoch())
+                           .count();
+    const std::string networkName = config.login;
+    const std::string clientId = "client-" + std::to_string(nowMs);
+    const auto join = linkora::app::JoinNetworkViaCoordinator(
+        transport,
+        config.host,
+        config.port,
+        networkName,
+        config.password,
+        clientId,
+        5000);
+    if (!join.ok)
+    {
+        std::cerr << "Join failed: " << join.error << '\n';
+        routeManager.Cleanup();
+        tunnel->Close();
+        transport.Close();
+        return 1;
+    }
+
+    linkora::utils::Log(
+        linkora::utils::LogLevel::Info,
+        "Joined network " + join.network + ", assigned IP " + join.assignedIp + ", host endpoint " + join.hostIp + ":" + std::to_string(join.hostPort));
+
+    linkora::app::ClientConfig hostAuthConfig = config;
+    hostAuthConfig.host = join.hostIp;
+    hostAuthConfig.port = join.hostPort;
+    hostAuthConfig.virtualIp = join.assignedIp;
+
+    auto auth = linkora::app::ClientAuthenticate(transport, hostAuthConfig, 10000);
     if (!auth.ok)
     {
         std::cerr << "Auth failed: " << auth.error << '\n';
@@ -55,7 +89,7 @@ int main(int argc, char **argv)
 
     if (useTun)
     {
-        const std::string assignedIp = !auth.virtualIp.empty() ? auth.virtualIp : config.virtualIp;
+        const std::string assignedIp = !join.assignedIp.empty() ? join.assignedIp : (!auth.virtualIp.empty() ? auth.virtualIp : config.virtualIp);
         if (assignedIp.empty())
         {
             std::cerr << "Auth succeeded but no virtual IP was assigned\n";
@@ -92,7 +126,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    if (!transport.SendTo(config.host, config.port, frame))
+    if (!transport.SendTo(hostAuthConfig.host, hostAuthConfig.port, frame))
     {
         std::cerr << "Failed to send encrypted frame\n";
         routeManager.Cleanup();

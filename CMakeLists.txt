@@ -39,6 +39,7 @@ endif()
 
 set(LINKORA_APP_SOURCES
     src/app/auth.cpp
+    src/app/coordinator_api.cpp
     src/app/config.cpp
     src/utils/logging.cpp
 )
@@ -57,9 +58,9 @@ add_executable(linkora_host src/app/host_main.cpp ${LINKORA_NETWORK_SOURCES} ${L
 target_include_directories(linkora_host PRIVATE src)
 target_link_libraries(linkora_host PRIVATE linkora_core)
 
-add_executable(linkora_client src/app/client_main.cpp ${LINKORA_NETWORK_SOURCES} ${LINKORA_APP_SOURCES})
-target_include_directories(linkora_client PRIVATE src)
-target_link_libraries(linkora_client PRIVATE linkora_core)
+add_executable(linkora_client_worker src/app/client_main.cpp ${LINKORA_NETWORK_SOURCES} ${LINKORA_APP_SOURCES})
+target_include_directories(linkora_client_worker PRIVATE src)
+target_link_libraries(linkora_client_worker PRIVATE linkora_core)
 
 add_executable(linkora_hash src/app/hash_main.cpp)
 target_include_directories(linkora_hash PRIVATE src)

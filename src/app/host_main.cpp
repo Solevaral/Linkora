@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "app/auth.h"
+#include "app/coordinator_api.h"
 #include "app/config.h"
 #include "core/tunnel.h"
 #include "network/frame.h"
@@ -31,6 +32,32 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    const std::string networkName = !config.networkName.empty() ? config.networkName : config.login;
+    if (config.passwordPlain.empty())
+    {
+        std::cerr << "Coordinator mode requires auth.password in host config\n";
+        transport.Close();
+        return 1;
+    }
+
+    const std::string hostClientId = "host-" + networkName + "-" + std::to_string(config.listenPort);
+    const auto registration = linkora::app::RegisterHostWithCoordinator(
+        transport,
+        config.coordinatorHost,
+        config.coordinatorPort,
+        networkName,
+        config.passwordPlain,
+        hostClientId,
+        config.listenPort,
+        5000);
+    if (!registration.ok)
+    {
+        std::cerr << "Coordinator registration failed: " << registration.error << '\n';
+        transport.Close();
+        return 1;
+    }
+
+    linkora::utils::Log(linkora::utils::LogLevel::Info, "Network registered in coordinator: " + registration.network);
     linkora::utils::Log(linkora::utils::LogLevel::Info, "Host started, waiting for client auth...");
 
     linkora::network::RouteManager routeManager;
