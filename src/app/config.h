@@ -28,6 +28,9 @@ namespace linkora::app
         std::string password;
         std::string virtualIp;
         int mtu = 1400;
+        bool useRelay = false;
+        std::string relayTargetHost;
+        std::uint16_t relayTargetPort = 0;
     };
 
     bool LoadHostConfig(const std::string &path, HostConfig &outConfig, std::string &error);

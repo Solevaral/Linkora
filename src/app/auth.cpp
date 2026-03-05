@@ -40,6 +40,36 @@ namespace linkora::app
             return out;
         }
 
+        std::vector<std::uint8_t> BuildRelayPayload(
+            const std::string &targetHost,
+            std::uint16_t targetPort,
+            const std::vector<std::uint8_t> &payload)
+        {
+            const std::string line =
+                "RELAY|" + targetHost + "|" + std::to_string(targetPort) + "|" + ToHex(payload);
+            return std::vector<std::uint8_t>(line.begin(), line.end());
+        }
+
+        bool SendMaybeRelay(
+            network::UdpTransport &transport,
+            const ClientConfig &config,
+            const std::vector<std::uint8_t> &payload)
+        {
+            if (config.useRelay)
+            {
+                if (config.relayTargetHost.empty() || config.relayTargetPort == 0)
+                {
+                    return false;
+                }
+                return transport.SendTo(
+                    config.host,
+                    config.port,
+                    BuildRelayPayload(config.relayTargetHost, config.relayTargetPort, payload));
+            }
+
+            return transport.SendTo(config.host, config.port, payload);
+        }
+
         bool FromHex(const std::string &hex, std::vector<std::uint8_t> &out)
         {
             if (hex.size() % 2 != 0)
@@ -286,7 +316,7 @@ namespace linkora::app
         bool gotChallenge = false;
         for (int attempt = 0; attempt < kHelloAttempts; ++attempt)
         {
-            if (!transport.SendTo(config.host, config.port, std::vector<std::uint8_t>(hello.begin(), hello.end())))
+            if (!SendMaybeRelay(transport, config, std::vector<std::uint8_t>(hello.begin(), hello.end())))
             {
                 result.error = "Failed to send HELLO";
                 return result;
@@ -314,7 +344,7 @@ namespace linkora::app
         }
 
         const std::string auth = "AUTH|" + config.login + "|" + config.password;
-        if (!transport.SendTo(config.host, config.port, std::vector<std::uint8_t>(auth.begin(), auth.end())))
+        if (!SendMaybeRelay(transport, config, std::vector<std::uint8_t>(auth.begin(), auth.end())))
         {
             result.error = "Failed to send AUTH";
             return result;
@@ -379,6 +409,25 @@ namespace linkora::app
         result.peerPort = config.port;
         result.ok = true;
         return result;
+    }
+
+    bool SendRelayPacket(
+        network::UdpTransport &transport,
+        const std::string &coordinatorHost,
+        std::uint16_t coordinatorPort,
+        const std::string &targetHost,
+        std::uint16_t targetPort,
+        const std::vector<std::uint8_t> &payload)
+    {
+        if (targetHost.empty() || targetPort == 0)
+        {
+            return false;
+        }
+
+        return transport.SendTo(
+            coordinatorHost,
+            coordinatorPort,
+            BuildRelayPayload(targetHost, targetPort, payload));
     }
 
 } // namespace linkora::app

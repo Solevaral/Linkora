@@ -32,4 +32,12 @@ namespace linkora::app
         const ClientConfig &config,
         int timeoutMs);
 
+    bool SendRelayPacket(
+        network::UdpTransport &transport,
+        const std::string &coordinatorHost,
+        std::uint16_t coordinatorPort,
+        const std::string &targetHost,
+        std::uint16_t targetPort,
+        const std::vector<std::uint8_t> &payload);
+
 } // namespace linkora::app

@@ -89,7 +89,25 @@ int main(int argc, char **argv)
     hostAuthConfig.port = join.hostPort;
     hostAuthConfig.virtualIp = join.assignedIp;
 
-    auto auth = linkora::app::ClientAuthenticate(transport, hostAuthConfig, 10000);
+    bool usingRelayFallback = false;
+    auto auth = linkora::app::ClientAuthenticate(transport, hostAuthConfig, 3000);
+    if (!auth.ok && auth.error == "Timeout waiting for CHALLENGE")
+    {
+        linkora::utils::Log(
+            linkora::utils::LogLevel::Warn,
+            "Direct path was not established in 3s, switching to relay via coordinator");
+
+        linkora::app::ClientConfig relayAuthConfig = hostAuthConfig;
+        relayAuthConfig.useRelay = true;
+        relayAuthConfig.relayTargetHost = join.hostIp;
+        relayAuthConfig.relayTargetPort = join.hostPort;
+        relayAuthConfig.host = config.host;
+        relayAuthConfig.port = config.port;
+
+        auth = linkora::app::ClientAuthenticate(transport, relayAuthConfig, 10000);
+        usingRelayFallback = auth.ok;
+    }
+
     if (!auth.ok)
     {
         std::cerr << "Auth failed: " << auth.error << '\n';
@@ -140,7 +158,17 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    if (!transport.SendTo(hostAuthConfig.host, hostAuthConfig.port, frame))
+    const bool sent = usingRelayFallback
+                          ? linkora::app::SendRelayPacket(
+                                transport,
+                                config.host,
+                                config.port,
+                                hostAuthConfig.host,
+                                hostAuthConfig.port,
+                                frame)
+                          : transport.SendTo(hostAuthConfig.host, hostAuthConfig.port, frame);
+
+    if (!sent)
     {
         std::cerr << "Failed to send encrypted frame\n";
         routeManager.Cleanup();
