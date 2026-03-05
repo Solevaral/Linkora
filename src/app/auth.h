@@ -15,6 +15,8 @@ namespace linkora::app
         bool ok = false;
         std::uint64_t sessionId = 0;
         std::vector<std::uint8_t> dataKey;
+        std::string virtualIp;
+        std::string virtualSubnet;
         std::string peerHost;
         std::uint16_t peerPort = 0;
         std::string error;

@@ -34,24 +34,11 @@ int main(int argc, char **argv)
     linkora::network::RouteManager routeManager;
     auto tunnel = linkora::core::CreatePlatformTunnel();
     const bool useTun = std::getenv("LINKORA_USE_TUN") != nullptr;
-    if (useTun)
+    if (useTun && !linkora::core::CreateAndBringUpTunnel(*tunnel, "linkora1", config.mtu, error))
     {
-        if (!linkora::core::CreateAndBringUpTunnel(*tunnel, "linkora1", config.mtu, error))
-        {
-            std::cerr << "Tunnel setup error: " << error << '\n';
-            transport.Close();
-            return 1;
-        }
-
-        if (!routeManager.Setup(config.virtualIp + "/32", tunnel->DeviceName(), error))
-        {
-            std::cerr << "Route setup error: " << error << '\n';
-            tunnel->Close();
-            transport.Close();
-            return 1;
-        }
-
-        linkora::utils::Log(linkora::utils::LogLevel::Info, "Tunnel up on device " + tunnel->DeviceName());
+        std::cerr << "Tunnel setup error: " << error << '\n';
+        transport.Close();
+        return 1;
     }
 
     auto auth = linkora::app::ClientAuthenticate(transport, config, 10000);
@@ -65,6 +52,30 @@ int main(int argc, char **argv)
     }
 
     linkora::utils::Log(linkora::utils::LogLevel::Info, "Authenticated with session id " + std::to_string(auth.sessionId));
+
+    if (useTun)
+    {
+        const std::string assignedIp = !auth.virtualIp.empty() ? auth.virtualIp : config.virtualIp;
+        if (assignedIp.empty())
+        {
+            std::cerr << "Auth succeeded but no virtual IP was assigned\n";
+            routeManager.Cleanup();
+            tunnel->Close();
+            transport.Close();
+            return 1;
+        }
+
+        if (!routeManager.Setup(assignedIp + "/32", tunnel->DeviceName(), error))
+        {
+            std::cerr << "Route setup error: " << error << '\n';
+            routeManager.Cleanup();
+            tunnel->Close();
+            transport.Close();
+            return 1;
+        }
+
+        linkora::utils::Log(linkora::utils::LogLevel::Info, "Tunnel up on device " + tunnel->DeviceName() + ", virtual IP " + assignedIp);
+    }
 
     linkora::network::WireHeader header;
     header.sessionId = auth.sessionId;

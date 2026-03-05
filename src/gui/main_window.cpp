@@ -63,24 +63,18 @@ void MainWindow::BuildUi()
     configGrid->setHorizontalSpacing(10);
     configGrid->setVerticalSpacing(8);
 
-    auto *hostAddressLabel = new QLabel("Host address");
+    auto *hostAddressLabel = new QLabel("Coordinator address");
     hostAddressEdit_ = new QLineEdit("127.0.0.1");
 
     auto *portLabel = new QLabel("Port");
     portEdit_ = new QLineEdit("38123");
 
-    auto *loginLabel = new QLabel("Network login");
+    auto *loginLabel = new QLabel("Network name");
     loginEdit_ = new QLineEdit("room1");
 
     auto *passwordLabel = new QLabel("Network password");
     passwordEdit_ = new QLineEdit("dev-password");
     passwordEdit_->setEchoMode(QLineEdit::Password);
-
-    auto *subnetLabel = new QLabel("Virtual subnet");
-    subnetEdit_ = new QLineEdit("10.44.0.0/24");
-
-    auto *virtualIpLabel = new QLabel("Client virtual IP");
-    virtualIpEdit_ = new QLineEdit("10.44.0.10");
 
     tunCheck_ = new QCheckBox("Enable TUN mode (requires privileges)");
 
@@ -94,11 +88,7 @@ void MainWindow::BuildUi()
     configGrid->addWidget(passwordLabel, 1, 2);
     configGrid->addWidget(passwordEdit_, 1, 3);
 
-    configGrid->addWidget(subnetLabel, 2, 0);
-    configGrid->addWidget(subnetEdit_, 2, 1);
-    configGrid->addWidget(virtualIpLabel, 2, 2);
-    configGrid->addWidget(virtualIpEdit_, 2, 3);
-    configGrid->addWidget(tunCheck_, 3, 0, 1, 4);
+    configGrid->addWidget(tunCheck_, 2, 0, 1, 4);
 
     root->addWidget(configBox);
 
@@ -106,9 +96,9 @@ void MainWindow::BuildUi()
     auto *actionsRow = new QHBoxLayout(actionsBox);
     actionsRow->setSpacing(10);
 
-    hostButton_ = new QPushButton("Host Network");
+    hostButton_ = new QPushButton("Create Network");
     stopHostButton_ = new QPushButton("Stop Host");
-    connectButton_ = new QPushButton("Connect to Host");
+    connectButton_ = new QPushButton("Join Network");
     clearLogButton_ = new QPushButton("Clear Log");
     stopHostButton_->setEnabled(false);
 
@@ -256,7 +246,7 @@ bool MainWindow::WriteHostConfig(QString &outPath, QString &error) const
     s << "  login: \"" << loginEdit_->text().trimmed() << "\"\n";
     s << "  password: \"" << passwordEdit_->text() << "\"\n\n";
     s << "vpn:\n";
-    s << "  virtual_subnet: \"" << subnetEdit_->text().trimmed() << "\"\n";
+    s << "  virtual_subnet: \"auto\"\n";
     s << "  mtu: 1400\n";
     return true;
 }
@@ -279,7 +269,6 @@ bool MainWindow::WriteClientConfig(QString &outPath, QString &error) const
     s << "  login: \"" << loginEdit_->text().trimmed() << "\"\n";
     s << "  password: \"" << passwordEdit_->text() << "\"\n\n";
     s << "vpn:\n";
-    s << "  virtual_ip: " << virtualIpEdit_->text().trimmed() << "\n";
     s << "  mtu: 1400\n";
     return true;
 }

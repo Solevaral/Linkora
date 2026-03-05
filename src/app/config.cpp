@@ -1,6 +1,7 @@
 #include "app/config.h"
 
 #include <algorithm>
+#include <cctype>
 #include <fstream>
 #include <sstream>
 #include <unordered_map>
@@ -123,6 +124,25 @@ namespace linkora::app
                 return false;
             }
         }
+
+        std::string DeriveSubnetFromName(const std::string &name)
+        {
+            std::uint32_t hash = 2166136261u;
+            for (unsigned char ch : name)
+            {
+                const unsigned char normalized = static_cast<unsigned char>(std::tolower(ch));
+                hash ^= static_cast<std::uint32_t>(normalized);
+                hash *= 16777619u;
+            }
+
+            const int octet2 = 16 + static_cast<int>(hash % 128u); // 10.16.0.0 - 10.143.255.0
+            int octet3 = static_cast<int>((hash >> 8) & 0xFFu);
+            if (octet3 == 0)
+            {
+                octet3 = 1;
+            }
+            return "10." + std::to_string(octet2) + "." + std::to_string(octet3) + ".0/24";
+        }
     } // namespace
 
     bool LoadHostConfig(const std::string &path, HostConfig &outConfig, std::string &error)
@@ -150,10 +170,16 @@ namespace linkora::app
             return false;
         }
 
-        if (outConfig.listenHost.empty() || outConfig.login.empty() || outConfig.virtualSubnet.empty())
+        if (outConfig.listenHost.empty() || outConfig.login.empty())
         {
             error = "Host config missing required fields";
             return false;
+        }
+
+        if (outConfig.virtualSubnet.empty() || outConfig.virtualSubnet == "auto")
+        {
+            const std::string baseName = !outConfig.networkName.empty() ? outConfig.networkName : outConfig.login;
+            outConfig.virtualSubnet = DeriveSubnetFromName(baseName);
         }
 
         if (outConfig.passwordHash.empty() && outConfig.passwordPlain.empty())
@@ -188,7 +214,7 @@ namespace linkora::app
             return false;
         }
 
-        if (outConfig.host.empty() || outConfig.login.empty() || outConfig.password.empty() || outConfig.virtualIp.empty())
+        if (outConfig.host.empty() || outConfig.login.empty() || outConfig.password.empty())
         {
             error = "Client config missing required fields";
             return false;

@@ -3,6 +3,7 @@
 #include <openssl/rand.h>
 
 #include <algorithm>
+#include <cstdint>
 #include <sstream>
 
 #include "core/crypto.h"
@@ -83,6 +84,82 @@ namespace linkora::app
             std::uint64_t value = 0;
             (void)RAND_bytes(reinterpret_cast<unsigned char *>(&value), sizeof(value));
             return value;
+        }
+
+        bool ParseSubnetPrefix24(const std::string &cidr, std::uint8_t &a, std::uint8_t &b, std::uint8_t &c)
+        {
+            const auto slashPos = cidr.find('/');
+            if (slashPos == std::string::npos || cidr.substr(slashPos + 1) != "24")
+            {
+                return false;
+            }
+
+            const auto ip = cidr.substr(0, slashPos);
+            const auto parts = Split(ip, '.');
+            if (parts.size() != 4)
+            {
+                return false;
+            }
+
+            auto parseOctet = [](const std::string &s, std::uint8_t &out) -> bool
+            {
+                if (s.empty() || s.size() > 3)
+                {
+                    return false;
+                }
+                try
+                {
+                    const int v = std::stoi(s);
+                    if (v < 0 || v > 255)
+                    {
+                        return false;
+                    }
+                    out = static_cast<std::uint8_t>(v);
+                    return true;
+                }
+                catch (...)
+                {
+                    return false;
+                }
+            };
+
+            std::uint8_t d = 0;
+            if (!parseOctet(parts[0], a) || !parseOctet(parts[1], b) || !parseOctet(parts[2], c) || !parseOctet(parts[3], d))
+            {
+                return false;
+            }
+
+            return d == 0;
+        }
+
+        std::string BuildIp(std::uint8_t a, std::uint8_t b, std::uint8_t c, std::uint8_t d)
+        {
+            return std::to_string(a) + "." + std::to_string(b) + "." + std::to_string(c) + "." + std::to_string(d);
+        }
+
+        std::string AssignVirtualIp(const std::string &subnetCidr, const std::string &login)
+        {
+            std::uint8_t a = 10;
+            std::uint8_t b = 44;
+            std::uint8_t c = 0;
+            if (!ParseSubnetPrefix24(subnetCidr, a, b, c))
+            {
+                return "10.44.0.10";
+            }
+
+            std::uint32_t hash = 2166136261u;
+            for (unsigned char ch : login)
+            {
+                hash ^= static_cast<std::uint32_t>(ch);
+                hash *= 16777619u;
+            }
+
+            std::uint8_t hostOctet = static_cast<std::uint8_t>(10 + (hash % 230u));
+            if (hostOctet == 255)
+            {
+                hostOctet = 254;
+            }
+            return BuildIp(a, b, c, hostOctet);
         }
     } // namespace
 
@@ -176,8 +253,11 @@ namespace linkora::app
         result.sessionId = RandomU64();
         result.peerHost = peerHost;
         result.peerPort = peerPort;
+        result.virtualSubnet = config.virtualSubnet;
+        result.virtualIp = AssignVirtualIp(config.virtualSubnet, authParts[1]);
 
-        const std::string ok = "AUTH_OK|" + std::to_string(result.sessionId) + "|" + ToHex(result.dataKey);
+        const std::string ok =
+            "AUTH_OK|" + std::to_string(result.sessionId) + "|" + ToHex(result.dataKey) + "|" + result.virtualIp + "|" + result.virtualSubnet;
         if (!transport.SendTo(peerHost, peerPort, std::vector<std::uint8_t>(ok.begin(), ok.end())))
         {
             result.error = "Failed to send AUTH_OK";
@@ -246,7 +326,13 @@ namespace linkora::app
             return result;
         }
 
-        if (parts.size() != 3 || parts[0] != "AUTH_OK")
+        if (parts[0] != "AUTH_OK")
+        {
+            result.error = "Invalid AUTH_OK format";
+            return result;
+        }
+
+        if (parts.size() != 3 && parts.size() != 5)
         {
             result.error = "Invalid AUTH_OK format";
             return result;
@@ -266,6 +352,12 @@ namespace linkora::app
         {
             result.error = "Invalid key encoding";
             return result;
+        }
+
+        if (parts.size() == 5)
+        {
+            result.virtualIp = parts[3];
+            result.virtualSubnet = parts[4];
         }
 
         result.peerHost = config.host;

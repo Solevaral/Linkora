@@ -37,8 +37,6 @@ private:
     QLineEdit *portEdit_ = nullptr;
     QLineEdit *loginEdit_ = nullptr;
     QLineEdit *passwordEdit_ = nullptr;
-    QLineEdit *subnetEdit_ = nullptr;
-    QLineEdit *virtualIpEdit_ = nullptr;
     QCheckBox *tunCheck_ = nullptr;
     QLabel *statusLabel_ = nullptr;
     QPlainTextEdit *logEdit_ = nullptr;
