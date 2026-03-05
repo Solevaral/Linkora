@@ -1,5 +1,7 @@
 # Linkora
 
+Language: English | [Russian](README.ru.md)
+
 Linkora is a cross-platform C++ VPN-like project (Linux + Windows) inspired by LAN overlay tools.
 This repository currently contains an MVP-oriented project skeleton with AES-256-GCM primitives,
 platform tunnel abstractions, and host/client entry points.
